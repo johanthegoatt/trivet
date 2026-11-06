@@ -1,0 +1,10 @@
+{
+  "name": "trivet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "What time to put the roast in so dinner lands on time and cooked through: the oven time, the time it comes out, the temperature to cook to, and when to start thawing a frozen bird. Runs in the browser, nothing uploaded. With Pip the thermometer.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
