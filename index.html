@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trivet — what time to put the roast in</title>
+  <meta name="description" content="Tell Trivet what you're cooking, how heavy it is and when you want to eat, and it tells you the time to put it in, the time to take it out, the temperature to cook to, and when to start thawing if it's frozen. Runs in your browser; nothing you type is uploaded.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b8562f'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='16' cy='12' r='6.5'/%3E%3Cpath d='M16 18.5v9'/%3E%3C/g%3E%3Ccircle cx='16' cy='12' r='1.6' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <h1><span class="logo" aria-hidden="true"></span> Trivet</h1>
+      <p class="tag">Working back from the time you want to eat: when the roast goes in, when it comes out, the temperature to cook it to, and when to start thawing if it's still frozen. So dinner lands hot and cooked through, not an hour late.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form id="form" class="card" autocomplete="off">
+      <fieldset class="group">
+        <legend>What you're cooking</legend>
+        <div class="field-row">
+          <label class="field">
+            <span>Roast</span>
+            <select id="meat">
+              <option value="turkey">Whole turkey</option>
+              <option value="turkey-breast">Turkey breast (whole)</option>
+              <option value="chicken">Whole chicken</option>
+              <option value="beef">Beef roast</option>
+              <option value="lamb">Leg of lamb</option>
+              <option value="pork">Pork loin roast</option>
+              <option value="gammon">Gammon / fresh ham</option>
+            </select>
+          </label>
+          <label class="field narrow">
+            <span>Weight</span>
+            <input id="weight" inputmode="decimal" placeholder="e.g. 16">
+          </label>
+          <label class="field narrow">
+            <span>in</span>
+            <select id="unit">
+              <option value="lb">pounds</option>
+              <option value="kg">kg</option>
+            </select>
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field check" id="stuffed-wrap">
+            <input type="checkbox" id="stuffed">
+            <span>Cooked with stuffing inside</span>
+          </label>
+          <label class="field" id="done-wrap" hidden>
+            <span>How you like it</span>
+            <select id="doneness">
+              <option value="rare">Rare</option>
+              <option value="medium-rare">Medium rare</option>
+              <option value="medium">Medium</option>
+              <option value="well">Well done</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" id="meat-hint">A whole turkey reads from the USDA size chart. Stuffing inside the bird adds a little time, and the stuffing has to reach 165 F too.</p>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>When you want to eat</legend>
+        <div class="field-row">
+          <label class="field narrow">
+            <span>Serve at</span>
+            <input id="serve" type="time" value="15:00">
+          </label>
+          <label class="field narrow">
+            <span>Rest for (min)</span>
+            <input id="rest" inputmode="numeric" placeholder="20">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field check">
+            <input type="checkbox" id="frozen">
+            <span>It's frozen and needs thawing</span>
+          </label>
+          <label class="field narrow" id="thaw-wrap" hidden>
+            <span>Thaw by</span>
+            <select id="thaw-method">
+              <option value="fridge">Fridge (safe, slow)</option>
+              <option value="cold-water">Cold water (faster)</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">Resting lets the juices settle and the roast keeps cooking a few degrees while it rests. Leave the rest blank to use the usual time for this roast.</p>
+      </fieldset>
+    </form>
+
+    <div class="out" id="out" aria-live="polite"></div>
+
+    <div class="actions">
+      <button id="share" class="ghost" type="button">Copy a link to this</button>
+      <span id="share-done" class="share-done" aria-live="polite"></span>
+    </div>
+
+    <section class="note">
+      <h2>The time tells you when to start. The thermometer tells you when it's done.</h2>
+      <p>Minutes per pound and the USDA turkey timetable are good for working out when to put a roast in, but ovens and
+      joints vary, so the only sure test of a cooked roast is its temperature in the thickest part: 165 F for poultry,
+      and at least 145 F with a rest for a whole cut of beef, pork, lamb or veal (160 F for anything minced). A roast
+      carries on cooking a few degrees after it leaves the oven, so Trivet has you pull it out a touch early and rest it,
+      which also lets the juices settle so it carves cleanly. If it's frozen, the real countdown starts days earlier,
+      because thawing in the fridge takes about a day for every four pounds. Start on the early side: a roast that's
+      ready too soon holds happily in a low oven, but one that's late holds up the whole table.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Everything runs in your browser. Nothing you type is uploaded. <a href="https://github.com/johanthegoatt/trivet">Source</a>.</p>
+  </footer>
+
+  <!-- Pip the probe thermometer -->
+  <div id="pip-dock" class="pip-dock">
+    <button id="pip-hide" class="pip-hide" type="button" aria-label="Hide Pip">tuck away</button>
+    <div id="pip-bubble" class="pip-bubble" role="status" aria-live="polite"></div>
+    <button id="pip" class="pip" type="button" data-mood="calm" aria-label="Pip the thermometer. Tap for a tip.">
+      <span class="pip-body" aria-hidden="true">
+        <span class="pip-dial">
+          <span class="pip-face">
+            <span class="pip-eye l"></span>
+            <span class="pip-eye r"></span>
+            <span class="pip-mouth"></span>
+          </span>
+        </span>
+        <span class="pip-stem"></span>
+        <span class="pip-tip"></span>
+      </span>
+    </button>
+  </div>
+
+  <script src="src/core.js"></script>
+  <script src="src/pip.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
