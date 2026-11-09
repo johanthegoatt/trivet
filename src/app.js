@@ -8,7 +8,7 @@
   var T = window.Trivet;
   var $ = function (id) { return document.getElementById(id); };
 
-  var ids = ["meat", "weight", "unit", "stuffed", "doneness", "serve", "rest", "frozen", "thaw-method"];
+  var ids = ["meat", "weight", "unit", "stuffed", "doneness", "serve", "rest", "frozen", "thaw-method", "people"];
   var el = {};
   ids.forEach(function (id) { el[id] = $(id); });
   var out = $("out");
@@ -22,7 +22,8 @@
       serve: el.serve.value,
       rest: el.rest.value.trim(),
       fz: el.frozen.checked ? 1 : 0,
-      tm: el["thaw-method"].value
+      tm: el["thaw-method"].value,
+      pe: el.people.value.trim()
     };
   }
 
@@ -37,6 +38,21 @@
     if (s.rest != null) el.rest.value = s.rest;
     el.frozen.checked = !!s.fz;
     if (s.tm) el["thaw-method"].value = s.tm;
+    if (s.pe != null) el.people.value = s.pe;
+  }
+
+  // Fill the "how big a joint" hint from the head count and the chosen meat.
+  function renderPortion(s) {
+    var hint = $("portion-hint");
+    if (!hint) return;
+    var p = T.portionWeight(s.me, s.pe, s.u);
+    if (!p) { hint.hidden = true; hint.textContent = ""; return; }
+    var m = T.MEATS[s.me] || T.MEATS.turkey;
+    var unitLabel = p.unit === "kg" ? "kg" : "lb";
+    hint.hidden = false;
+    hint.textContent = "For " + p.people + (p.people === 1 ? " person" : " people") + ", buy about " +
+      p.min + "–" + p.max + " " + unitLabel + " of " + m.label.toLowerCase() +
+      " (aim for " + p.aim + " " + unitLabel + "). Add a little for leftovers.";
   }
 
   // Build a Date for the serving time on a reference day, then step backwards by
@@ -135,6 +151,7 @@
       thawMethod: s.tm
     });
     var kind = render(r, s);
+    renderPortion(s);
     if (window.Pip) window.Pip.react(r.ok ? kind : "bad", r);
     syncLink(s);
   }
