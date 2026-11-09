@@ -35,34 +35,39 @@
 
   // The roasts Trivet knows. "chart" meats read a size band from the USDA turkey
   // timetable; "rate" and "rate-done" meats use minutes per pound.
+  // `perPersonLb` is the raw weight to buy per person, [min, max] in pounds. A
+  // bone-in roast carries more weight you don't eat, so it's about a pound a
+  // head; a boneless joint is about half that. These follow standard catering
+  // guidance (roughly 1 lb bone-in or 1/2 lb boneless per adult, a little more
+  // for a bird if you want leftovers).
   var MEATS = {
     "turkey": {
       label: "Whole turkey", basis: "chart", poultry: true, stuffable: true,
-      safeF: 165, restMin: 20, oven: 325
+      safeF: 165, restMin: 20, oven: 325, perPersonLb: [1.0, 1.5]
     },
     "turkey-breast": {
       label: "Turkey breast (whole)", basis: "chart-breast", poultry: true,
-      safeF: 165, restMin: 15, oven: 325
+      safeF: 165, restMin: 15, oven: 325, perPersonLb: [0.5, 0.75]
     },
     "chicken": {
       label: "Whole chicken", basis: "rate", poultry: true, perLb: [20, 22],
-      safeF: 165, restMin: 15, oven: 350
+      safeF: 165, restMin: 15, oven: 350, perPersonLb: [0.75, 1.0]
     },
     "beef": {
       label: "Beef roast", basis: "rate-done", safeF: 145, restMin: 20, oven: 325,
-      defaultDone: "medium-rare"
+      defaultDone: "medium-rare", perPersonLb: [0.5, 0.75]
     },
     "lamb": {
       label: "Leg of lamb", basis: "rate-done", safeF: 145, restMin: 20, oven: 325,
-      defaultDone: "medium"
+      defaultDone: "medium", perPersonLb: [0.75, 1.0]
     },
     "pork": {
       label: "Pork loin roast", basis: "rate", perLb: [20, 25], safeF: 145,
-      restMin: 15, oven: 350
+      restMin: 15, oven: 350, perPersonLb: [0.5, 0.75]
     },
     "gammon": {
       label: "Gammon / fresh ham", basis: "rate", perLb: [22, 28], safeF: 145,
-      restMin: 15, oven: 325
+      restMin: 15, oven: 325, perPersonLb: [0.5, 0.75]
     }
   };
 
@@ -143,6 +148,32 @@
     var hours = Math.ceil((lb / 4) * 24);
     hours = Math.max(hours, 24);
     return { method: "fridge", minutes: hours * 60, label: "in the fridge" };
+  }
+
+  // How big a joint or bird to buy for a number of people. Multiplies the
+  // per-person raw weight for the meat by the head count and returns a range in
+  // both pounds and kilograms, with the midpoint to aim for. Bone-in roasts and
+  // birds carry weight you don't eat, so they come out heavier per head than a
+  // boneless joint; add a person or two if you want proper leftovers.
+  function portionWeight(meatKey, people, unit) {
+    var m = MEATS[meatKey] || MEATS.turkey;
+    var n = Math.max(0, Math.floor(num(people)));
+    if (!(n > 0) || !m.perPersonLb) return null;
+    var minLb = m.perPersonLb[0] * n;
+    var maxLb = m.perPersonLb[1] * n;
+    var midLb = (minLb + maxLb) / 2;
+    function toUnit(lb) { return unit === "kg" ? lb / LB_PER_KG : lb; }
+    return {
+      people: n,
+      unit: unit === "kg" ? "kg" : "lb",
+      minLb: Math.round(minLb * 10) / 10,
+      maxLb: Math.round(maxLb * 10) / 10,
+      minKg: Math.round((minLb / LB_PER_KG) * 10) / 10,
+      maxKg: Math.round((maxLb / LB_PER_KG) * 10) / 10,
+      min: Math.round(toUnit(minLb) * 10) / 10,
+      max: Math.round(toUnit(maxLb) * 10) / 10,
+      aim: Math.round(toUnit(midLb) * 10) / 10
+    };
   }
 
   // The whole plan. Everything is returned as minutes-before-serving offsets so
@@ -266,6 +297,7 @@
   return {
     LB_PER_KG: LB_PER_KG, MEATS: MEATS, DONENESS: DONENESS, TURKEY: TURKEY, TURKEY_BREAST: TURKEY_BREAST,
     num: num, toLb: toLb, round: round, band: band, roastMinutes: roastMinutes, thaw: thaw,
+    portionWeight: portionWeight,
     hoursText: hoursText, plan: plan, advise: advise, pack: pack, unpack: unpack
   };
 });
