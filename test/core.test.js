@@ -113,3 +113,31 @@ test("share link round-trips the state", () => {
   assert.deepStrictEqual(T.unpack(packed), state);
   assert.strictEqual(T.unpack("@@not-base64@@!!"), null);
 });
+
+// --- portion weight: how big a joint for N people ---
+
+test("a turkey for 8 comes out around 8 to 12 lb", function () {
+  var p = T.portionWeight("turkey", 8, "lb");
+  assert.strictEqual(p.people, 8);
+  assert.strictEqual(p.minLb, 8);
+  assert.strictEqual(p.maxLb, 12);
+  assert.ok(p.aim >= 8 && p.aim <= 12);
+});
+
+test("a boneless beef roast is lighter per head than a bird", function () {
+  var beef = T.portionWeight("beef", 6, "lb");
+  var turkey = T.portionWeight("turkey", 6, "lb");
+  assert.ok(beef.maxLb < turkey.minLb + 0.01);
+});
+
+test("kilograms convert from the pound figure", function () {
+  var p = T.portionWeight("lamb", 4, "kg");
+  assert.strictEqual(p.unit, "kg");
+  assert.ok(Math.abs(p.min - p.minKg) < 0.11);
+  assert.ok(p.min > 0 && p.max > p.min);
+});
+
+test("no people, no answer", function () {
+  assert.strictEqual(T.portionWeight("turkey", 0, "lb"), null);
+  assert.strictEqual(T.portionWeight("turkey", "", "lb"), null);
+});
