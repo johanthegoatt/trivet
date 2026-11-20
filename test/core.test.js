@@ -141,3 +141,23 @@ test("no people, no answer", function () {
   assert.strictEqual(T.portionWeight("turkey", 0, "lb"), null);
   assert.strictEqual(T.portionWeight("turkey", "", "lb"), null);
 });
+
+test("a fan oven shortens the roast time by about a fifth", () => {
+  const conv = T.plan({ meat: "beef", weight: { value: 4, unit: "lb" }, doneness: "medium-rare" });
+  const fan = T.plan({ meat: "beef", weight: { value: 4, unit: "lb" }, doneness: "medium-rare", fanOven: true });
+  assert.strictEqual(fan.fanOven, true);
+  assert.ok(fan.roastMax < conv.roastMax);
+  assert.strictEqual(fan.roastMax, Math.round(conv.roastMax * T.FAN_TIME_FACTOR));
+});
+
+test("a fan oven also offers the lower dial setting that keeps the full time", () => {
+  const fan = T.plan({ meat: "turkey", weight: { value: 14, unit: "lb" }, fanOven: true });
+  assert.strictEqual(fan.fanTempF, fan.oven - T.FAN_TEMP_DROP_F);
+  assert.strictEqual(fan.fanTempC, Math.round((fan.fanTempF - 32) * 5 / 9));
+});
+
+test("roastMinutes applies the fan factor to the chart birds too", () => {
+  const conv = T.roastMinutes("turkey", 16, { stuffed: false });
+  const fan = T.roastMinutes("turkey", 16, { stuffed: false, fanOven: true });
+  assert.strictEqual(fan.max, Math.round(conv.max * T.FAN_TIME_FACTOR));
+});
