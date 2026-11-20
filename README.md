@@ -11,6 +11,7 @@ Live: https://trivet.johanthegoat.xyz
 - **Doneness for red meat.** Beef and lamb are timed to rare, medium rare, medium or well done, each with its own target temperature.
 - **The temperature, front and centre.** The clock is only for when to start; the real test is the temperature in the thickest part. Trivet shows the finish temperature and has you pull the roast out a few degrees early, because it keeps cooking while it rests.
 - **Thawing is part of the countdown.** Tick "frozen" and Trivet adds the thaw time before the oven: about a day in the fridge for every four pounds, or roughly half an hour a pound in cold water.
+- **Fan (convection) oven.** Tick it and Trivet shortens the time by about a fifth, since a fan oven cooks hotter and faster at the same dial. It also shows the lower temperature you could set instead to keep the longer conventional timing (about 25 F / 20 C below the stated dial).
 - **A share link** that reopens the same plan. The whole input lives in the link's `#fragment`, which a browser never sends to a server, so nothing you type is uploaded.
 
 ## The method
@@ -22,6 +23,7 @@ Sources:
 - [USDA / University of Illinois Extension — turkey roasting timetable (325 F, 165 F, 20-minute rest)](https://extension.illinois.edu/turkey/traditional-roast-turkey-stuffed)
 - [USDA FoodSafety.gov — safe minimum internal temperatures (poultry 165 F; roasts 145 F + rest; ground 160 F)](https://www.foodsafety.gov/food-safety-charts/meat-poultry-charts)
 - [USDA FSIS — "Let's Talk Turkey" (thaw about 24 hours per 4-5 lb in the fridge; 30 min/lb in cold water)](https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/poultry/lets-talk-turkey-consumer-guide-safely-roasting-turkey)
+- Fan oven conversion (drop about 20 C / 25 F, or expect roughly a fifth less time at the same temperature): [UK Good Housekeeping oven temperature conversion guide](https://www.goodhousekeeping.com/uk/food/a540011/oven-temperature-conversion-guide/)
 
 ## Pip
 
