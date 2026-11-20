@@ -8,7 +8,7 @@
   var T = window.Trivet;
   var $ = function (id) { return document.getElementById(id); };
 
-  var ids = ["meat", "weight", "unit", "stuffed", "doneness", "serve", "rest", "frozen", "thaw-method", "people"];
+  var ids = ["meat", "weight", "unit", "stuffed", "fan-oven", "doneness", "serve", "rest", "frozen", "thaw-method", "people"];
   var el = {};
   ids.forEach(function (id) { el[id] = $(id); });
   var out = $("out");
@@ -18,6 +18,7 @@
       me: el.meat.value,
       w: el.weight.value.trim(), u: el.unit.value,
       st: el.stuffed.checked ? 1 : 0,
+      fan: el["fan-oven"].checked ? 1 : 0,
       dn: el.doneness.value,
       serve: el.serve.value,
       rest: el.rest.value.trim(),
@@ -33,6 +34,7 @@
     if (s.w != null) el.weight.value = s.w;
     if (s.u) el.unit.value = s.u;
     el.stuffed.checked = !!s.st;
+    el["fan-oven"].checked = !!s.fan;
     if (s.dn) el.doneness.value = s.dn;
     if (s.serve) el.serve.value = s.serve;
     if (s.rest != null) el.rest.value = s.rest;
@@ -111,13 +113,15 @@
 
     var steps =
       (r.frozen && r.thaw ? timeCell("Start thawing", new Date(serve.getTime() - r.thawStartOffset * 60000), serve, false, r.thaw.label) : "") +
-      timeCell("Put it in", putIn, serve, true, "oven at " + r.oven + " F") +
+      timeCell("Put it in", putIn, serve, true,
+        (r.fanOven ? "fan oven at " : "oven at ") + r.oven + " F") +
       timeCell("Take it out", outLate, serve, false, "or as early as " + fmtClock(outEarly)) +
       timeCell("Rest, then serve", serve, serve, false, r.restMin + " min rest");
 
     var meta =
       '<p class="meta">' + r.meatLabel + (r.donenessLabel ? ", " + r.donenessLabel.toLowerCase() : "") +
-      (r.stuffed ? ", stuffed" : "") + " · " + r.lb + " lb (" + r.kg + " kg) · about " + roastText + sizeNote + " in the oven.</p>";
+      (r.stuffed ? ", stuffed" : "") + " · " + r.lb + " lb (" + r.kg + " kg) · about " + roastText + sizeNote + " in the oven.</p>" +
+      (r.fanOven ? '<p class="meta">Fan oven: the timing above is already shortened. If you\'d rather keep the longer conventional timing, drop the dial to about ' + r.fanTempF + ' F (' + r.fanTempC + ' C) instead.</p>' : "");
 
     var temps =
       '<div class="temps">' +
@@ -145,6 +149,7 @@
       meat: s.me,
       weight: { value: s.w, unit: s.u },
       stuffed: !!s.st,
+      fanOven: !!s.fan,
       doneness: s.dn,
       restMin: s.rest === "" ? undefined : s.rest,
       frozen: !!s.fz,
