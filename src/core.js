@@ -22,6 +22,16 @@
 
   var LB_PER_KG = 2.2046226218;
 
+  // A fan (convection) oven moves hot air around the food, so at the same dial
+  // setting it cooks hotter and faster than a conventional oven. The usual
+  // manufacturer guidance is to either drop the temperature by about 25 F (20 C)
+  // and keep the timing, or keep the temperature and the roast finishes roughly
+  // a fifth sooner. Trivet's chart and per-pound times assume a conventional
+  // oven at the stated temperature, so when you tell it you have a fan oven it
+  // shortens the time by this factor and also shows the lower dial setting.
+  var FAN_TIME_FACTOR = 0.8;   // fan at the same temperature cooks ~20% faster
+  var FAN_TEMP_DROP_F = 25;    // ...or drop the dial this much and keep the time
+
   // How done a red-meat roast is, with the minutes per pound at 325 F and the
   // final internal temperature you're aiming for. The USDA safe minimum for a
   // whole cut of beef, pork, veal or lamb is 145 F with a 3-minute rest; levels
@@ -120,20 +130,23 @@
   function roastMinutes(meatKey, lb, opts) {
     opts = opts || {};
     var m = MEATS[meatKey] || MEATS.turkey;
+    // If the cook keeps the stated temperature on a fan oven, the food finishes
+    // sooner, so shorten the planning time by the fan factor.
+    var f = opts.fanOven ? FAN_TIME_FACTOR : 1;
     if (m.basis === "chart") {
       var b = band(TURKEY, lb, opts.stuffed ? "stuffed" : "unstuffed");
-      return { min: Math.round(b.minH * 60), max: Math.round(b.maxH * 60), clamped: b.clamped, perLb: null };
+      return { min: Math.round(b.minH * 60 * f), max: Math.round(b.maxH * 60 * f), clamped: b.clamped, perLb: null };
     }
     if (m.basis === "chart-breast") {
       var bb = band(TURKEY_BREAST, lb, null);
-      return { min: Math.round(bb.minH * 60), max: Math.round(bb.maxH * 60), clamped: bb.clamped, perLb: null };
+      return { min: Math.round(bb.minH * 60 * f), max: Math.round(bb.maxH * 60 * f), clamped: bb.clamped, perLb: null };
     }
     var per = m.perLb;
     if (m.basis === "rate-done") {
       var dk = DONENESS[opts.doneness] ? opts.doneness : m.defaultDone;
       per = DONENESS[dk].perLb;
     }
-    return { min: Math.round(per[0] * lb), max: Math.round(per[1] * lb), clamped: false, perLb: per };
+    return { min: Math.round(per[0] * lb * f), max: Math.round(per[1] * lb * f), clamped: false, perLb: per };
   }
 
   // Thawing a frozen roast. The fridge is the safe way: allow about 24 hours for
@@ -191,7 +204,8 @@
     var stuffed = !!opts.stuffed && m.stuffable;
     var doneKey = (m.basis === "rate-done" && DONENESS[opts.doneness]) ? opts.doneness : m.defaultDone;
 
-    var roast = roastMinutes(meatKey, lb, { stuffed: stuffed, doneness: doneKey });
+    var fanOven = !!opts.fanOven;
+    var roast = roastMinutes(meatKey, lb, { stuffed: stuffed, doneness: doneKey, fanOven: fanOven });
     var rp = num(opts.restMin);
     var rest = isFinite(rp) ? Math.max(0, Math.round(rp)) : m.restMin;
 
@@ -222,6 +236,11 @@
       meat: meatKey,
       meatLabel: m.label,
       oven: m.oven,
+      fanOven: fanOven,
+      // The dial setting to use: on a fan oven you may instead keep the full
+      // conventional time and drop the temperature by this much.
+      fanTempF: m.oven - FAN_TEMP_DROP_F,
+      fanTempC: Math.round(((m.oven - FAN_TEMP_DROP_F) - 32) * 5 / 9),
       poultry: !!m.poultry,
       stuffed: stuffed,
       doneness: m.basis === "rate-done" ? doneKey : null,
@@ -295,7 +314,8 @@
   }
 
   return {
-    LB_PER_KG: LB_PER_KG, MEATS: MEATS, DONENESS: DONENESS, TURKEY: TURKEY, TURKEY_BREAST: TURKEY_BREAST,
+    LB_PER_KG: LB_PER_KG, FAN_TIME_FACTOR: FAN_TIME_FACTOR, FAN_TEMP_DROP_F: FAN_TEMP_DROP_F,
+    MEATS: MEATS, DONENESS: DONENESS, TURKEY: TURKEY, TURKEY_BREAST: TURKEY_BREAST,
     num: num, toLb: toLb, round: round, band: band, roastMinutes: roastMinutes, thaw: thaw,
     portionWeight: portionWeight,
     hoursText: hoursText, plan: plan, advise: advise, pack: pack, unpack: unpack
