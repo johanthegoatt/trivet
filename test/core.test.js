@@ -161,3 +161,37 @@ test("roastMinutes applies the fan factor to the chart birds too", () => {
   const fan = T.roastMinutes("turkey", 16, { stuffed: false, fanOven: true });
   assert.strictEqual(fan.max, Math.round(conv.max * T.FAN_TIME_FACTOR));
 });
+
+test("roastMinutes: from frozen takes at least half as long again", () => {
+  const normal = T.roastMinutes("chicken", 5, {});
+  const frozen = T.roastMinutes("chicken", 5, { fromFrozen: true });
+  assert.strictEqual(frozen.min, Math.round(normal.min * T.FROM_FROZEN_FACTOR));
+  assert.strictEqual(frozen.max, Math.round(normal.max * T.FROM_FROZEN_FACTOR));
+  assert.ok(frozen.min > normal.min);
+});
+
+test("roastMinutes: fan oven and frozen stack as multipliers", () => {
+  const base = T.roastMinutes("chicken", 5, {});
+  const both = T.roastMinutes("chicken", 5, { fromFrozen: true, fanOven: true });
+  assert.strictEqual(both.max, Math.round(base.max * T.FROM_FROZEN_FACTOR * T.FAN_TIME_FACTOR));
+});
+
+test("plan: cooking from frozen rules out stuffing and thawing", () => {
+  const r = T.plan({ meat: "turkey", weight: { value: 12, unit: "lb" }, fromFrozen: true, stuffed: true, frozen: true, thawMethod: "fridge" });
+  assert.ok(r.ok);
+  assert.strictEqual(r.fromFrozen, true);
+  assert.strictEqual(r.stuffed, false);   // can't stuff a frozen bird
+  assert.strictEqual(r.thaw, null);        // nothing to thaw
+  assert.strictEqual(r.frozen, false);
+});
+
+test("plan: from frozen stretches the oven time vs a thawed roast", () => {
+  const thawed = T.plan({ meat: "turkey", weight: { value: 12, unit: "lb" } });
+  const frozen = T.plan({ meat: "turkey", weight: { value: 12, unit: "lb" }, fromFrozen: true });
+  assert.ok(frozen.roastMax > thawed.roastMax);
+});
+
+test("plan: the from-frozen advice is shown", () => {
+  const r = T.plan({ meat: "chicken", weight: { value: 5, unit: "lb" }, fromFrozen: true });
+  assert.ok(r.advice.some(function (t) { return /from frozen/i.test(t); }));
+});
