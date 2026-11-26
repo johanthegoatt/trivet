@@ -8,7 +8,7 @@
   var T = window.Trivet;
   var $ = function (id) { return document.getElementById(id); };
 
-  var ids = ["meat", "weight", "unit", "stuffed", "fan-oven", "doneness", "serve", "rest", "frozen", "thaw-method", "people"];
+  var ids = ["meat", "weight", "unit", "stuffed", "fan-oven", "doneness", "serve", "rest", "frozen", "from-frozen", "thaw-method", "people"];
   var el = {};
   ids.forEach(function (id) { el[id] = $(id); });
   var out = $("out");
@@ -23,6 +23,7 @@
       serve: el.serve.value,
       rest: el.rest.value.trim(),
       fz: el.frozen.checked ? 1 : 0,
+      ff: el["from-frozen"].checked ? 1 : 0,
       tm: el["thaw-method"].value,
       pe: el.people.value.trim()
     };
@@ -39,6 +40,7 @@
     if (s.serve) el.serve.value = s.serve;
     if (s.rest != null) el.rest.value = s.rest;
     el.frozen.checked = !!s.fz;
+    el["from-frozen"].checked = !!s.ff;
     if (s.tm) el["thaw-method"].value = s.tm;
     if (s.pe != null) el.people.value = s.pe;
   }
@@ -153,6 +155,7 @@
       doneness: s.dn,
       restMin: s.rest === "" ? undefined : s.rest,
       frozen: !!s.fz,
+      fromFrozen: !!s.ff,
       thawMethod: s.tm
     });
     var kind = render(r, s);
@@ -165,9 +168,12 @@
   // one, and the thaw method only when frozen is ticked.
   function syncFields() {
     var m = T.MEATS[el.meat.value] || T.MEATS.turkey;
-    $("stuffed-wrap").hidden = !m.stuffable;
+    var ff = el["from-frozen"].checked;
+    // Cooking from frozen overrides stuffing and thawing: you can't do either.
+    $("stuffed-wrap").hidden = !m.stuffable || ff;
     $("done-wrap").hidden = m.basis !== "rate-done";
-    $("thaw-wrap").hidden = !el.frozen.checked;
+    $("thaw-wrap").hidden = !el.frozen.checked || ff;
+    el.frozen.disabled = ff;
     var hint = $("meat-hint");
     if (m.poultry) hint.textContent = "Poultry is cooked to 165 F right through. A whole turkey reads from the USDA size chart; others use minutes per pound.";
     else if (m.basis === "rate-done") hint.textContent = "A whole beef or lamb joint is timed to how you like it, and cooked to temperature, not the clock. USDA safe minimum is 145 F with a rest.";
@@ -195,6 +201,7 @@
 
   el.meat.addEventListener("change", function () { syncFields(); recompute(); });
   el.frozen.addEventListener("change", function () { syncFields(); recompute(); });
+  el["from-frozen"].addEventListener("change", function () { syncFields(); recompute(); });
 
   ids.forEach(function (id) {
     el[id].addEventListener("input", recompute);
