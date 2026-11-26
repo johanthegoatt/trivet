@@ -127,12 +127,18 @@
   }
 
   // Minutes the roast itself needs, as a {min,max} range in minutes.
+  // Cooking straight from frozen, no thawing. The USDA says this is safe for a
+  // whole bird or joint but it takes at least 50% longer, and you can't stuff a
+  // frozen bird. Trivet stretches the planning time by this factor when you tell
+  // it the roast is going in frozen.
+  var FROM_FROZEN_FACTOR = 1.5;
+
   function roastMinutes(meatKey, lb, opts) {
     opts = opts || {};
     var m = MEATS[meatKey] || MEATS.turkey;
-    // If the cook keeps the stated temperature on a fan oven, the food finishes
-    // sooner, so shorten the planning time by the fan factor.
-    var f = opts.fanOven ? FAN_TIME_FACTOR : 1;
+    // Both the fan oven and a frozen start are time multipliers on the planning
+    // minutes: a fan oven finishes sooner, a frozen roast takes much longer.
+    var f = (opts.fanOven ? FAN_TIME_FACTOR : 1) * (opts.fromFrozen ? FROM_FROZEN_FACTOR : 1);
     if (m.basis === "chart") {
       var b = band(TURKEY, lb, opts.stuffed ? "stuffed" : "unstuffed");
       return { min: Math.round(b.minH * 60 * f), max: Math.round(b.maxH * 60 * f), clamped: b.clamped, perLb: null };
@@ -201,11 +207,14 @@
     if (!(lb > 0)) return { ok: false, reason: "bad-weight" };
     if (lb > 60) return { ok: false, reason: "too-big" };
 
-    var stuffed = !!opts.stuffed && m.stuffable;
+    // Cooking from frozen rules out stuffing (you can't reach inside) and there
+    // is nothing to thaw, so it overrides both.
+    var fromFrozen = !!opts.fromFrozen;
+    var stuffed = !!opts.stuffed && m.stuffable && !fromFrozen;
     var doneKey = (m.basis === "rate-done" && DONENESS[opts.doneness]) ? opts.doneness : m.defaultDone;
 
     var fanOven = !!opts.fanOven;
-    var roast = roastMinutes(meatKey, lb, { stuffed: stuffed, doneness: doneKey, fanOven: fanOven });
+    var roast = roastMinutes(meatKey, lb, { stuffed: stuffed, doneness: doneKey, fanOven: fanOven, fromFrozen: fromFrozen });
     var rp = num(opts.restMin);
     var rest = isFinite(rp) ? Math.max(0, Math.round(rp)) : m.restMin;
 
@@ -224,7 +233,7 @@
     var totalActive = roast.max + rest;
 
     var thawInfo = null, thawStartOffset = null;
-    if (opts.frozen) {
+    if (opts.frozen && !fromFrozen) {
       thawInfo = thaw(lb, opts.thawMethod);
       if (thawInfo) thawStartOffset = inOffset + thawInfo.minutes;
     }
@@ -263,7 +272,8 @@
       outLatestOffset: outLatest,
       outEarliestOffset: outEarliest,
       totalActive: totalActive,
-      frozen: !!opts.frozen,
+      frozen: !!opts.frozen && !fromFrozen,
+      fromFrozen: fromFrozen,
       thaw: thawInfo,
       thawStartOffset: thawStartOffset
     };
@@ -290,6 +300,9 @@
     if (r.frozen && r.thaw) {
       tips.push("Frozen: allow " + hoursText(r.thaw.minutes) + " to thaw " + r.thaw.label + " before it even goes in, so the countdown really starts then.");
     }
+    if (r.fromFrozen) {
+      tips.push("Cooking from frozen: the USDA says this is safe but takes at least half as long again, which is already in the time above. You can't stuff a frozen bird, and check the temperature in a few spots as it may cook unevenly.");
+    }
     tips.push("If it's ready early, it'll hold in a low oven (about 70 C) covered loosely, so starting on the earlier side is safer than cutting it fine.");
     return tips;
   }
@@ -315,6 +328,7 @@
 
   return {
     LB_PER_KG: LB_PER_KG, FAN_TIME_FACTOR: FAN_TIME_FACTOR, FAN_TEMP_DROP_F: FAN_TEMP_DROP_F,
+    FROM_FROZEN_FACTOR: FROM_FROZEN_FACTOR,
     MEATS: MEATS, DONENESS: DONENESS, TURKEY: TURKEY, TURKEY_BREAST: TURKEY_BREAST,
     num: num, toLb: toLb, round: round, band: band, roastMinutes: roastMinutes, thaw: thaw,
     portionWeight: portionWeight,
